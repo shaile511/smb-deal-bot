@@ -10,6 +10,8 @@ import argparse
 
 import pandas as pd
 
+from dotenv import find_dotenv, load_dotenv
+
 from .drafts import draft_email
 from .generate import generate_leads
 from .linear import push_leads
@@ -17,6 +19,8 @@ from .scoring import rank_leads
 
 
 def main() -> None:
+    # Read API keys from the nearest .env (repo root), on any OS. Real env vars win.
+    load_dotenv(find_dotenv(usecwd=True))
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--csv", help="lead CSV (default: generate fake leads)")
     parser.add_argument("--seed", type=int, default=42)
