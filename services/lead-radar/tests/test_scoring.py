@@ -52,7 +52,17 @@ def test_rank_is_sorted_and_drops_customers():
 
 
 def test_generator_is_repeatable_and_fake():
-    a = generate_leads(50, seed=1, today=TODAY)
-    b = generate_leads(50, seed=1, today=TODAY)
+    a = generate_leads(50, seed=1, today=TODAY, include_featured=False)
+    b = generate_leads(50, seed=1, today=TODAY, include_featured=False)
     assert a.equals(b)
     assert a["contact_email"].str.endswith("@example.com").all()
+
+
+def test_featured_restaurants_are_in_the_list_and_rank_differently():
+    leads = generate_leads(200, seed=42, today=TODAY)
+    assert len(leads) == 200
+    ranked = rank_leads(leads, TODAY).reset_index(drop=True)
+    group = ranked.index[ranked["company"] == "Maple & Ember Bistro Group"][0]
+    cafe = ranked.index[ranked["company"] == "Corner Lantern Cafe"][0]
+    assert group < 10          # strong prospect lands in the top 10
+    assert cafe > group        # small cafe on a home plan ranks lower
