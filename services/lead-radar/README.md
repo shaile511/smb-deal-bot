@@ -53,10 +53,9 @@ Then open http://localhost:8501.
 2. Linear personal API key: Linear > Settings > Security & access > Personal API keys.
 3. Put both in `.env` at the repo root (see `.env.example`). `.env` is never committed.
 
-Then, from the command line:
+Then, from the command line (Mac, Linux or Windows; the keys are read from `.env` automatically):
 
 ```bash
-set -a; source ../../.env; set +a
 python -m lead_radar.cli --top 10 --dry-run   # preview
 python -m lead_radar.cli --top 10             # create the issues
 ```

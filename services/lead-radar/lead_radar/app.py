@@ -7,11 +7,15 @@ import os
 
 import pandas as pd
 import streamlit as st
+from dotenv import find_dotenv, load_dotenv
 
 from lead_radar.drafts import draft_email
 from lead_radar.generate import generate_leads
 from lead_radar.linear import LinearError, push_leads
 from lead_radar.scoring import rank_leads
+
+# Read API keys from the nearest .env (repo root), on any OS. Real env vars win.
+load_dotenv(find_dotenv(usecwd=True))
 
 st.set_page_config(page_title="Lead Radar", layout="wide")
 st.title("Lead Radar")
