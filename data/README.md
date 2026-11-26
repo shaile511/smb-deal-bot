@@ -19,6 +19,6 @@ The generator is fake row by row but shaped like real Canadian small businesses:
 | Industry mix | Construction, professional services and health care are the largest groups | Same source, Table 3 |
 | Contract end | When a fixed term ends, service rolls to month-to-month, so "contract ended" means "can switch now" | [Rogers Small Business Terms of Service](https://rogers.com/support/terms/rogers-small-business-terms-of-service-and-other-important-information), section 2 |
 | Locations per business | **Guess.** No public Canadian figure found | n/a |
-| Share on consumer plans | **Guess (18%).** No Canadian figure found; an Australian NBN Co report puts it at 83% | [WhistleOut, Sept 2026](https://www.whistleout.com.au/Broadband/News/Most-small-businesses-are-using-consumer-NBN-plans) |
+| Share on consumer plans | **Guess:** about 1 in 4 under 10 staff, none above 20. No Canadian figure found; an Australian NBN Co report puts it at 83% of small businesses | [WhistleOut, Sept 2026](https://www.whistleout.com.au/Broadband/News/Most-small-businesses-are-using-consumer-NBN-plans) |
 
 Only the ten industries the tool models are generated, so each one's share is higher than in the full economy.

@@ -75,8 +75,10 @@ def generate_leads(count: int = 200, seed: int = 42, today: date | None = None) 
             locations = rng.choices([1, 2, 3], weights=[70, 20, 10])[0]
         else:
             locations = rng.choices([1, 2, 3, rng.randint(4, 8)], weights=[40, 25, 20, 15])[0]
+        # Consumer plans are a small-shop habit (guess): common under 10 staff, rare above 20.
+        consumer_weight = 25 if employees < 10 else 8 if employees < 20 else 0
         provider = rng.choices(
-            [*COMPETITORS, NO_BUSINESS_PLAN, OUR_COMPANY], weights=[18, 18, 18, 18, 18, 10]
+            [*COMPETITORS, NO_BUSINESS_PLAN, OUR_COMPANY], weights=[18, 18, 18, 18, consumer_weight, 10]
         )[0]
         if provider == NO_BUSINESS_PLAN:
             contract_end = ""  # month-to-month, no business contract
