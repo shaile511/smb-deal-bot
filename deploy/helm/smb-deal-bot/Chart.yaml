@@ -1,0 +1,6 @@
+apiVersion: v2
+name: smb-deal-bot
+description: SMB sales automation services (Lead Radar, Quote Desk, Account Watch) with a shared Postgres
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,4 @@
+smb-deal-bot is installed in namespace {{ .Release.Namespace }}.
+
+Check it:  kubectl -n {{ .Release.Namespace }} get pods
+Postgres:  postgres.{{ .Release.Namespace }}.svc.cluster.local:5432 (database {{ .Values.postgres.database }})
