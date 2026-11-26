@@ -51,7 +51,7 @@ st.write(f"**{len(leads)}** businesses loaded, **{skipped}** are already custome
 top = ranked.head(top_n)
 st.dataframe(
     top[["score", "company", "industry", "employees", "locations", "current_provider", "contract_end", "city"]],
-    width="stretch",
+    use_container_width=True,
     hide_index=True,
 )
 
