@@ -1,0 +1,7 @@
+streamlit==1.40.1
+anthropic==2.14.0
+requests==2.32.3
+python-dotenv==1.0.1
+fpdf2==2.8.1
+SQLAlchemy==2.0.36
+psycopg[binary]==3.2.3
