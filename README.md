@@ -3,6 +3,8 @@
 Automation for the stages of a small-business (SMB) sales deal: prospecting, quoting, follow-up, onboarding and renewal.
 Three small services share one fake dataset and run together on Kubernetes. Work is planned and tracked in Linear.
 
+**[Try the Lead Radar demo](https://smb-deal-bot-3apc4tq4ht4vadxa98meca.streamlit.app/)** (demo mode: sample emails, Linear preview only).
+
 > All companies, people, prices and products in this repo are fictional. The demo provider is "Northwind Connect", a made-up telecom and IT services company.
 
 ## The three services
