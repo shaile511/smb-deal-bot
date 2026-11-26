@@ -19,6 +19,8 @@ postgres:
 leadRadar:
   enabled: false
   replicas: 1
+  # Linear team key or name for new issues; empty means the workspace's first team.
+  linearTeamKey: ""
   image:
     # Built locally and loaded into kind (see services/lead-radar/README.md).
     repository: smb-deal-bot/lead-radar

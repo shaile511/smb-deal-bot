@@ -24,6 +24,22 @@ spec:
           ports:
             - name: http
               containerPort: 8501
+          # Optional keys: without them the app runs in demo mode (template drafts, Linear dry run).
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: ANTHROPIC_API_KEY
+                  optional: true
+            - name: LINEAR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: LINEAR_API_KEY
+                  optional: true
+            - name: LINEAR_TEAM_KEY
+              value: {{ .Values.leadRadar.linearTeamKey | quote }}
           readinessProbe:
             httpGet:
               path: /_stcore/health

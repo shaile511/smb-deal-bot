@@ -9,7 +9,7 @@ Three small services share one fake dataset and run together on Kubernetes. Work
 
 | Service | Deal stages | What it does | Status |
 | --- | --- | --- | --- |
-| [Lead Radar](services/lead-radar/) | Prospecting | Scores a territory list on fit and contract timing, explains each score, drafts a first email | Scoring and screen working |
+| [Lead Radar](services/lead-radar/) | Prospecting | Scores a territory list on fit and contract timing, explains each score, drafts a first email | Working: scoring, email drafts, Linear issues |
 | [Quote Desk](services/quote-desk/) | Quoting, follow-up | Turns call notes into a priced PDF quote, then runs follow-ups that stop when the client replies | Planned |
 | [Account Watch](services/account-watch/) | Onboarding, renewal | Tracks onboarding steps, scores account health, flags renewals at 90, 60 and 30 days | Planned |
 
