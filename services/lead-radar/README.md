@@ -33,7 +33,7 @@ On your laptop:
 cd services/lead-radar
 pip install -r requirements-dev.txt
 python -m pytest -q tests
-PYTHONPATH=. streamlit run lead_radar/app.py
+streamlit run lead_radar/app.py
 ```
 
 On the local Kubernetes cluster (see the main README for creating it):
@@ -46,6 +46,10 @@ kubectl -n smb-deal-bot port-forward svc/lead-radar 8501:80
 ```
 
 Then open http://localhost:8501.
+
+### Public demo link (Streamlit Community Cloud)
+
+At [share.streamlit.io](https://share.streamlit.io), sign in with GitHub, choose **Create app**, pick this repo and branch `main`, set the main file to `services/lead-radar/streamlit_app.py`, and under Advanced settings pick Python 3.12. Add **no** secrets: the public demo should run in demo mode, so visitors can't spend your Claude credits or create issues in your Linear.
 
 ## Turn on Claude and Linear
 
