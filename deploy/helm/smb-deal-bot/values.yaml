@@ -18,6 +18,19 @@ postgres:
 # Services are switched on as they are built.
 leadRadar:
   enabled: false
+  replicas: 1
+  image:
+    # Built locally and loaded into kind (see services/lead-radar/README.md).
+    repository: smb-deal-bot/lead-radar
+    tag: dev
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 quoteDesk:
   enabled: false
 accountWatch:

@@ -9,7 +9,7 @@ Three small services share one fake dataset and run together on Kubernetes. Work
 
 | Service | Deal stages | What it does | Status |
 | --- | --- | --- | --- |
-| [Lead Radar](services/lead-radar/) | Prospecting | Scores a territory list on fit and contract timing, explains each score, drafts a first email | Planned |
+| [Lead Radar](services/lead-radar/) | Prospecting | Scores a territory list on fit and contract timing, explains each score, drafts a first email | Scoring and screen working |
 | [Quote Desk](services/quote-desk/) | Quoting, follow-up | Turns call notes into a priced PDF quote, then runs follow-ups that stop when the client replies | Planned |
 | [Account Watch](services/account-watch/) | Onboarding, renewal | Tracks onboarding steps, scores account health, flags renewals at 90, 60 and 30 days | Planned |
 
@@ -54,7 +54,7 @@ helm install smb-deal-bot deploy/helm/smb-deal-bot -n smb-deal-bot
 kubectl -n smb-deal-bot get pods
 ```
 
-Right now the chart only starts Postgres. Each service is added to the chart as it is built.
+By default the chart starts Postgres only. Turn a service on with `--set leadRadar.enabled=true`; see each service README for building its image.
 
 ## Project tracking
 
