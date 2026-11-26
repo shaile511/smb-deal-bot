@@ -1,0 +1,24 @@
+# Name of the Secret holding POSTGRES_PASSWORD, ANTHROPIC_API_KEY, LINEAR_API_KEY, SLACK_WEBHOOK_URL.
+# Create it from .env (see README) so no key ever lives in this file.
+existingSecret: smb-deal-bot-secrets
+
+postgres:
+  image: postgres:16-alpine
+  database: dealbot
+  user: dealbot
+  storage: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Services are switched on as they are built.
+leadRadar:
+  enabled: false
+quoteDesk:
+  enabled: false
+accountWatch:
+  enabled: false
