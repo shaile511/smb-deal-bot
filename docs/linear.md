@@ -9,7 +9,7 @@ Linear plans the build and is also used by the apps themselves. It does not host
 - Two-week cycles, each ending with something demoable.
 - Labels: `feature`, `bug`, `infra`, `docs`, `data`.
 - Issues are written as user stories, for example: "As a rep, I can see why a lead scored 82 so I trust the ranking."
-- GitHub is connected: put the Linear issue ID (for example `DEAL-12`) in a branch name or pull request title and the issue updates on its own.
+- GitHub is connected: put the Linear issue ID (for example `THE-12`) in a branch name or pull request title and the issue updates on its own.
 
 ## Linear inside the apps
 

@@ -1,5 +1,7 @@
 # Quote and Follow-up Desk (quoting and follow-up)
 
+**[Live demo](https://smb-deal-bot-pb9vfrp4g6dybpmerysglx.streamlit.app/)** (demo mode: simple notes parser, follow-ups stay in the app instead of Linear)
+
 **Problem:** after a good discovery call, a rep spends 30+ minutes building a quote by hand, guesses at how much discount is safe, then forgets to follow up. Quotes go cold.
 
 **What it does:**

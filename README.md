@@ -4,6 +4,7 @@ Automation for the stages of a small-business (SMB) sales deal: prospecting, quo
 Three small services share one fake dataset and run together on Kubernetes. Work is planned and tracked in Linear.
 
 **[Try the Lead Radar demo](https://smb-deal-bot-3apc4tq4ht4vadxa98meca.streamlit.app/)** (demo mode: sample emails, Linear preview only).
+**[Try the Quote Desk demo](https://smb-deal-bot-pb9vfrp4g6dybpmerysglx.streamlit.app/)** (demo mode: simple notes parser, follow-ups stay in the app).
 
 > All companies, people, prices and products in this repo are fictional. The demo provider is "Northwind Connect", a made-up telecom and IT services company.
 
@@ -12,7 +13,7 @@ Three small services share one fake dataset and run together on Kubernetes. Work
 | Service | Deal stages | What it does | Status |
 | --- | --- | --- | --- |
 | [Lead Radar](services/lead-radar/) | Prospecting | Scores a territory list on fit and contract timing, explains each score, drafts a first email | Working: scoring, email drafts, Linear issues |
-| [Quote Desk](services/quote-desk/) | Quoting, follow-up | Turns call notes into a priced PDF quote, then runs follow-ups that stop when the client replies | Working: quotes, PDF, Linear follow-ups, CronJob |
+| [Quote Desk](services/quote-desk/) ([demo](https://smb-deal-bot-pb9vfrp4g6dybpmerysglx.streamlit.app/)) | Quoting, follow-up | Turns call notes into a priced PDF quote, then runs follow-ups that stop when the client replies | Working: quotes, PDF, Linear follow-ups, CronJob |
 | [Account Watch](services/account-watch/) | Onboarding, renewal | Tracks onboarding steps, scores account health, flags renewals at 90, 60 and 30 days | Planned |
 
 Each service also creates work in Linear through its API (top leads, follow-up tasks, onboarding and renewal issues). See [docs/linear.md](docs/linear.md).
