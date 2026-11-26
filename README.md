@@ -54,6 +54,21 @@ helm install smb-deal-bot deploy/helm/smb-deal-bot -n smb-deal-bot
 kubectl -n smb-deal-bot get pods
 ```
 
+### On Windows or Mac with Docker Desktop
+
+No kind needed: Docker Desktop has Kubernetes built in. In Docker Desktop, open Settings > Kubernetes, tick **Enable Kubernetes**, choose **Kubeadm** (so the cluster can see images you build) and wait for the green "Kubernetes running" light. Install Helm with `winget install Helm.Helm` (Windows) or `brew install helm` (Mac). Then, from the repo root:
+
+```powershell
+docker build -t smb-deal-bot/lead-radar:dev services/lead-radar
+kubectl create namespace smb-deal-bot
+kubectl -n smb-deal-bot create secret generic smb-deal-bot-secrets --from-env-file=.env
+helm upgrade --install smb-deal-bot deploy/helm/smb-deal-bot -n smb-deal-bot --set leadRadar.enabled=true
+kubectl -n smb-deal-bot get pods
+kubectl -n smb-deal-bot port-forward svc/lead-radar 8501:80
+```
+
+Open http://localhost:8501. Stop with Ctrl+C; remove everything with `helm uninstall smb-deal-bot -n smb-deal-bot`.
+
 By default the chart starts Postgres only. Turn a service on with `--set leadRadar.enabled=true`; see each service README for building its image.
 
 ## Project tracking

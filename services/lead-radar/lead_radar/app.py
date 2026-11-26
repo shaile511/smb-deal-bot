@@ -4,6 +4,13 @@ email drafts, and a button that turns the top leads into Linear issues."""
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
+
+# `streamlit run lead_radar/app.py` only puts lead_radar/ on the import path, so add its
+# parent too. Without this the app fails with "No module named 'lead_radar'" unless
+# PYTHONPATH is set (it is in the Docker image, but not on a laptop or Streamlit Cloud).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pandas as pd
 import streamlit as st
