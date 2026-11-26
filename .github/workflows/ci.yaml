@@ -14,7 +14,7 @@ jobs:
       - name: Lint the chart
         run: helm lint deploy/helm/smb-deal-bot
       - name: Render the chart
-        run: helm template smb-deal-bot deploy/helm/smb-deal-bot --set leadRadar.enabled=true > rendered.yaml
+        run: helm template smb-deal-bot deploy/helm/smb-deal-bot --set leadRadar.enabled=true --set quoteDesk.enabled=true > rendered.yaml
       - name: Validate against Kubernetes schemas
         run: |
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
@@ -36,3 +36,20 @@ jobs:
         run: python -m pytest -q tests
       - name: Build the container image
         run: docker build -t smb-deal-bot/lead-radar:ci .
+
+  quote-desk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/quote-desk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -r requirements-dev.txt
+      - name: Test
+        run: python -m pytest -q tests
+      - name: Build the container image
+        run: docker build -t smb-deal-bot/quote-desk:ci .

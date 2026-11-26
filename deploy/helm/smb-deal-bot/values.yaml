@@ -35,5 +35,21 @@ leadRadar:
       memory: 512Mi
 quoteDesk:
   enabled: false
+  replicas: 1
+  linearTeamKey: ""
+  # When the follow-up CronJob runs, in UTC. 13:00 UTC is 8 AM Eastern (9 AM in summer).
+  followupSchedule: "0 13 * * *"
+  image:
+    # Built locally and loaded into kind (see services/quote-desk/README.md).
+    repository: smb-deal-bot/quote-desk
+    tag: dev
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 accountWatch:
   enabled: false
