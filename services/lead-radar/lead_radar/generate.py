@@ -54,8 +54,44 @@ def _add_months(start: date, months: int) -> date:
     return date(year, month, 1)
 
 
-def generate_leads(count: int = 200, seed: int = 42, today: date | None = None) -> pd.DataFrame:
-    """Return `count` fictional small businesses. Same seed gives the same list."""
+def featured_leads(today: date) -> list[dict]:
+    """Two hand-written fictional restaurants that always appear in the demo list.
+
+    One is a strong prospect (multi-site group, contract ending soon), one is a typical
+    small cafe on a home plan, so the demo shows how the same industry can rank very differently.
+    """
+    return [
+        {
+            "company": "Maple & Ember Bistro Group",
+            "contact_name": "Priya Nair",
+            "contact_email": "priya.nair@example.com",
+            "city": "Hamilton",
+            "industry": "Restaurant",
+            "employees": 42,
+            "locations": 3,
+            "current_provider": "Harbor Networks",
+            "contract_end": _add_months(today, 3).strftime("%Y-%m"),
+        },
+        {
+            "company": "Corner Lantern Cafe",
+            "contact_name": "Marc Tremblay",
+            "contact_email": "marc.tremblay@example.com",
+            "city": "Halifax",
+            "industry": "Restaurant",
+            "employees": 6,
+            "locations": 1,
+            "current_provider": NO_BUSINESS_PLAN,
+            "contract_end": "",
+        },
+    ]
+
+
+def generate_leads(count: int = 200, seed: int = 42, today: date | None = None,
+                   include_featured: bool = True) -> pd.DataFrame:
+    """Return `count` fictional small businesses. Same seed gives the same list.
+
+    With include_featured, the two hand-written restaurants replace the last two random rows.
+    """
     today = today or date.today()
     rng = random.Random(seed)
     fake = Faker("en_CA")
@@ -100,6 +136,8 @@ def generate_leads(count: int = 200, seed: int = 42, today: date | None = None) 
                 "contract_end": contract_end,
             }
         )
+    if include_featured and count >= 2:
+        rows = rows[: count - 2] + featured_leads(today)
     return pd.DataFrame(rows, columns=COLUMNS)
 
 
