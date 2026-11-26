@@ -1,5 +1,7 @@
 # Lead Radar (prospecting)
 
+**[Live demo](https://smb-deal-bot-3apc4tq4ht4vadxa98meca.streamlit.app/)** (demo mode: template emails, Linear as a dry run)
+
 **Problem:** reps waste hours deciding which small businesses in a territory to call first, then write the same cold email over and over.
 
 **What it does now:**
