@@ -2,7 +2,8 @@
 
 Uses Linear's GraphQL API with a personal API key (LINEAR_API_KEY). Without a key, or with
 dry_run=True, it only returns what it would create. Re-running does not create duplicates:
-an issue with the same title in the same team is reused.
+an issue for the same contact and company in the same team is reused, even if the
+score has changed since (the score lives in the description, not the title).
 """
 
 from __future__ import annotations
@@ -17,8 +18,8 @@ API_URL = "https://api.linear.app/graphql"
 TEAMS_QUERY = "query { teams { nodes { id key name } } }"
 FIND_QUERY = """
 query Find($teamId: ID!, $title: String!) {
-  issues(filter: { team: { id: { eq: $teamId } }, title: { eq: $title } }) {
-    nodes { identifier url }
+  issues(filter: { team: { id: { eq: $teamId } }, title: { startsWith: $title } }) {
+    nodes { identifier url title }
   }
 }
 """
@@ -42,7 +43,12 @@ class Result:
 
 
 def issue_title(lead: dict) -> str:
-    return f"Call {lead['contact_name']} at {lead['company']} (score {lead['score']})"
+    return f"Call {lead['contact_name']} at {lead['company']}"
+
+
+def same_lead(existing_title: str, title: str) -> bool:
+    """True for this title, or the older form with a score suffix: "... (score 93)"."""
+    return existing_title == title or existing_title.startswith(f"{title} (score ")
 
 
 def issue_priority(score: int) -> int:
@@ -57,6 +63,7 @@ def issue_priority(score: int) -> int:
 def issue_description(lead: dict, draft_body: str | None = None) -> str:
     reasons = "\n".join(f"- {r}" for r in lead.get("reasons", []))
     text = (
+        f"**Lead score: {lead['score']}/100**\n\n"
         f"**{lead['company']}** · {lead['industry']} · {lead['employees']} staff · "
         f"{lead['locations']} location(s) · {lead['city']}\n\n"
         f"Contact: {lead['contact_name']} ({lead['contact_email']})\n"
@@ -105,7 +112,9 @@ class LinearClient:
 
     def find_issue(self, team_id: str, title: str) -> dict | None:
         nodes = self._call(FIND_QUERY, {"teamId": team_id, "title": title})["issues"]["nodes"]
-        return nodes[0] if nodes else None
+        # startsWith also matches "Call Ana at Test Dental West"; keep only true matches.
+        matches = [n for n in nodes if same_lead(n.get("title", ""), title)]
+        return matches[0] if matches else None
 
     def create_issue(self, team_id: str, title: str, description: str, priority: int) -> dict:
         data = self._call(

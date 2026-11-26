@@ -51,17 +51,34 @@ def test_creates_issue_with_priority_and_draft():
     assert create["teamId"] == "team-1"
     assert create["priority"] == 2
     assert "Hi Ana" in create["description"]
+    assert "Lead score: 95/100" in create["description"]
 
 
 def test_does_not_duplicate():
-    session = FakeSession(existing=[{"identifier": "DEAL-3", "url": "https://linear.app/x/DEAL-3"}])
+    session = FakeSession(existing=[{"identifier": "DEAL-3", "url": "https://linear.app/x/DEAL-3",
+                                     "title": "Call Ana Lopez at Test Dental"}])
     results = push_leads([LEAD], client=LinearClient(api_key="test", session=session))
     assert results[0].status == "exists"
     assert not any("issueCreate" in c["query"] for c in session.calls)
 
 
+def test_score_change_does_not_duplicate_old_titles():
+    # Issues made before this change carry the score in the title; a new score must still match.
+    session = FakeSession(existing=[{"identifier": "DEAL-3", "url": "https://linear.app/x/DEAL-3",
+                                     "title": "Call Ana Lopez at Test Dental (score 88)"}])
+    results = push_leads([LEAD], client=LinearClient(api_key="test", session=session))
+    assert results[0].status == "exists" and results[0].identifier == "DEAL-3"
+
+
+def test_similar_company_name_is_not_a_match():
+    session = FakeSession(existing=[{"identifier": "DEAL-4", "url": "https://linear.app/x/DEAL-4",
+                                     "title": "Call Ana Lopez at Test Dental West"}])
+    results = push_leads([LEAD], client=LinearClient(api_key="test", session=session))
+    assert results[0].status == "created"
+
+
 def test_title_and_priority():
-    assert issue_title(LEAD) == "Call Ana Lopez at Test Dental (score 95)"
+    assert issue_title(LEAD) == "Call Ana Lopez at Test Dental"
     assert [issue_priority(s) for s in (90, 75, 40)] == [2, 3, 4]
 
 
