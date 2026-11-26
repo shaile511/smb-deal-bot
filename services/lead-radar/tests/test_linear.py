@@ -63,3 +63,14 @@ def test_does_not_duplicate():
 def test_title_and_priority():
     assert issue_title(LEAD) == "Call Ana Lopez at Test Dental (score 95)"
     assert [issue_priority(s) for s in (90, 75, 40)] == [2, 3, 4]
+
+
+def test_unknown_team_gives_plain_hint(monkeypatch):
+    import pytest
+
+    from lead_radar import linear
+
+    client = linear.LinearClient(api_key="test-key")
+    monkeypatch.setattr(client, "_call", lambda q, v=None: {"teams": {"nodes": [{"id": "t1", "key": "THE", "name": "The Deal Bot"}]}})
+    with pytest.raises(linear.LinearError, match="Your teams: THE.*LINEAR_TEAM_KEY"):
+        client.team_id("AUTO")

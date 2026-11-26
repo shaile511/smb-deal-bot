@@ -96,7 +96,11 @@ class LinearClient:
             for team in teams:
                 if team["key"].lower() == team_key.lower() or team["name"].lower() == team_key.lower():
                     return team["id"]
-            raise LinearError(f"Team {team_key!r} not found. Teams: {', '.join(t['key'] for t in teams)}")
+            keys = ", ".join(t["key"] for t in teams)
+            raise LinearError(
+                f"Linear team {team_key!r} not found. Your teams: {keys}. "
+                f"Set LINEAR_TEAM_KEY in .env to one of those, or leave it blank to use the first team."
+            )
         return teams[0]["id"]
 
     def find_issue(self, team_id: str, title: str) -> dict | None:

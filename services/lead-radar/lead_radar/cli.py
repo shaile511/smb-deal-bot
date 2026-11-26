@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 
 import pandas as pd
 
@@ -14,7 +15,7 @@ from dotenv import find_dotenv, load_dotenv
 
 from .drafts import draft_email
 from .generate import generate_leads
-from .linear import push_leads
+from .linear import LinearError, push_leads
 from .scoring import rank_leads
 
 
@@ -40,7 +41,11 @@ def main() -> None:
             drafts[lead["company"]] = f"Subject: {draft.subject}\n\n{draft.body}"
             print(f"[draft:{draft.source}] {lead['company']}")
 
-    for result in push_leads(top, drafts, team_key=args.team, dry_run=args.dry_run):
+    try:
+        results = push_leads(top, drafts, team_key=args.team, dry_run=args.dry_run)
+    except LinearError as err:
+        sys.exit(f"[linear error] {err}")
+    for result in results:
         where = f" {result.identifier} {result.url}" if result.identifier else ""
         print(f"[{result.status}] {result.title}{where}")
 
