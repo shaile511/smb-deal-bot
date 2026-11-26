@@ -14,18 +14,26 @@ OUR_COMPANY = "Northwind Connect"
 COMPETITORS = ["Bluepeak Telecom", "Harbor Networks", "Summit Fiber", "Lakeside Cable"]
 NO_BUSINESS_PLAN = "Consumer plan"
 
-INDUSTRIES = [
-    "Dental clinic",
-    "Law office",
-    "Real estate agency",
-    "Restaurant",
-    "Retail store",
-    "Accounting firm",
-    "Auto repair",
-    "Fitness studio",
-    "Construction",
-    "Salon",
-]
+# Industry mix weighted roughly like Canada's small businesses (ISED, Key Small Business
+# Statistics 2025, Table 3, Dec 2024): construction 14%, professional services 14%,
+# health care 11%, other services 10%, retail 9%, food 7%, real estate 5%.
+INDUSTRY_WEIGHTS = {
+    "Construction": 14,
+    "Law office": 7,
+    "Accounting firm": 7,
+    "Dental clinic": 11,
+    "Auto repair": 5,
+    "Salon": 5,
+    "Retail store": 9,
+    "Restaurant": 7,
+    "Real estate agency": 5,
+    "Fitness studio": 2,
+}
+INDUSTRIES = list(INDUSTRY_WEIGHTS)
+
+# Staff-size bands weighted like Canada's employer businesses (same source, Table 2):
+# 59% have 1-4 employees, 18% 5-9, 11% 10-19, 7% 20-49, 2.5% 50-99, about 1% 100-199.
+SIZE_BANDS = [((1, 4), 59.1), ((5, 9), 18.2), ((10, 19), 11.1), ((20, 49), 7.2), ((50, 99), 2.5), ((100, 199), 1.0)]
 
 COLUMNS = [
     "company",
@@ -55,14 +63,18 @@ def generate_leads(count: int = 200, seed: int = 42, today: date | None = None) 
 
     rows = []
     for _ in range(count):
-        employees = rng.choice([rng.randint(2, 9), rng.randint(10, 49), rng.randint(50, 199)])
-        # Keep sites realistic for headcount: tiny shops have one, only larger firms spread out.
+        (low, high), = rng.choices([b for b, _ in SIZE_BANDS], weights=[w for _, w in SIZE_BANDS])
+        employees = rng.randint(low, high)
+        # Sites per business: no public Canadian figure found, so this is a guess.
+        # Tiny shops have one site; only larger firms commonly spread out.
         if employees < 10:
             locations = 1
+        elif employees < 20:
+            locations = rng.choices([1, 2], weights=[90, 10])[0]
         elif employees < 50:
-            locations = rng.choice([1, 1, 1, 2, 2, 3])
+            locations = rng.choices([1, 2, 3], weights=[70, 20, 10])[0]
         else:
-            locations = rng.choice([1, 2, 3, rng.randint(4, 8)])
+            locations = rng.choices([1, 2, 3, rng.randint(4, 8)], weights=[40, 25, 20, 15])[0]
         provider = rng.choices(
             [*COMPETITORS, NO_BUSINESS_PLAN, OUR_COMPANY], weights=[18, 18, 18, 18, 18, 10]
         )[0]
@@ -79,7 +91,7 @@ def generate_leads(count: int = 200, seed: int = 42, today: date | None = None) 
                 # example.com is reserved for documentation, so no real inbox is ever hit.
                 "contact_email": f"{first.lower()}.{last.lower()}@example.com",
                 "city": fake.city(),
-                "industry": rng.choice(INDUSTRIES),
+                "industry": rng.choices(INDUSTRIES, weights=list(INDUSTRY_WEIGHTS.values()))[0],
                 "employees": employees,
                 "locations": locations,
                 "current_provider": provider,
