@@ -65,6 +65,11 @@ h2 { font-size: 26px; letter-spacing: -.01em; margin: 0 0 20px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
 .card b { display: block; margin-bottom: 4px; }
 .card span { color: var(--muted); font-size: 15px; }
+.byline { margin: -4px 0 16px; font-size: 16px; color: var(--muted); }
+.byline a { color: var(--text); font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--line); }
+.about { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px; margin-bottom: 48px; }
+.about h2 { margin-bottom: 10px; }
+.about p { margin: 0 0 18px; max-width: 70ch; color: var(--muted); }
 footer { border-top: 1px solid var(--line); padding: 28px 0 48px; color: var(--muted); font-size: 14px; }
 footer p { margin: 0 0 6px; }
 @media (max-width: 820px) {
@@ -82,7 +87,8 @@ footer p { margin: 0 0 6px; }
   <header>
     <p class="eyebrow">Sales automation portfolio</p>
     <h1>SMB Deal Bot</h1>
-    <p class="lede">Three tools that take the busywork out of a small-business sales deal: who to call first, what to quote, and when to follow up. Built by a salesperson who sells to small businesses every day.</p>
+    <p class="byline">Built by <a href="https://www.linkedin.com/in/shailesh-saravanan-964018184/">Shailesh Saravanan</a></p>
+    <p class="lede">Three tools that take the busywork out of a small-business sales deal: who to call first, what to quote, and when to follow up.</p>
     <div class="actions">
       <a class="btn primary" href="https://smb-deal-bot-pb9vfrp4g6dybpmerysglx.streamlit.app/">Try Quote Desk</a>
       <a class="btn" href="https://smb-deal-bot-3apc4tq4ht4vadxa98meca.streamlit.app/">Try Lead Radar</a>
@@ -151,6 +157,15 @@ footer p { margin: 0 0 6px; }
     <div class="card"><b>Claude</b><span>Reads call notes and drafts emails. Every tool still works in demo mode without a key.</span></div>
     <div class="card"><b>Linear</b><span>The rep's to-do list inside the apps, and where the build itself is planned and tracked.</span></div>
     <div class="card"><b>Python, Streamlit, GitHub Actions</b><span>Tested on every pull request: unit tests, an app smoke test, chart validation and image builds.</span></div>
+  </section>
+
+  <section class="about" aria-labelledby="about-h">
+    <h2 id="about-h">About me</h2>
+    <p>I'm Shailesh Saravanan. I sell telecom and IT services to small businesses, and before that I was a developer, working on identity and access management and MERN apps. These tools come from problems I see on real sales calls.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://www.linkedin.com/in/shailesh-saravanan-964018184/">Connect on LinkedIn</a>
+      <a class="btn" href="https://github.com/shaile511">GitHub</a>
+    </div>
   </section>
 
   <footer>
