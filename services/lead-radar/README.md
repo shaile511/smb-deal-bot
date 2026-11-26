@@ -1,12 +1,16 @@
 # Lead Radar (prospecting)
 
-**Problem:** reps waste hours deciding which small businesses in a territory to call first.
+**Problem:** reps waste hours deciding which small businesses in a territory to call first, then write the same cold email over and over.
 
 **What it does now:**
 1. Generates 200 fictional small businesses (or takes your own CSV).
 2. Scores each one out of 100 on **fit** (staff size, number of locations, industry) and **timing** (when their current contract ends).
 3. Shows every score's reasons, so a rep can trust or challenge the ranking.
 4. Leaves out businesses that are already customers.
+5. Drafts a short first email per lead with Claude, for the rep to edit. Nothing is ever sent.
+6. Turns the top leads into Linear issues, with the reasons, the draft and a priority from the score. Re-running never creates duplicates.
+
+Without API keys it runs in **demo mode**: template drafts, and Linear as a dry run that shows what it would create.
 
 ![Lead Radar screen](docs/screenshot.png)
 
@@ -43,8 +47,22 @@ kubectl -n smb-deal-bot port-forward svc/lead-radar 8501:80
 
 Then open http://localhost:8501.
 
+## Turn on Claude and Linear
+
+1. Claude API key from [console.anthropic.com](https://console.anthropic.com) (pay as you go).
+2. Linear personal API key: Linear > Settings > Security & access > Personal API keys.
+3. Put both in `.env` at the repo root (see `.env.example`). `.env` is never committed.
+
+Then, from the command line:
+
+```bash
+set -a; source ../../.env; set +a
+python -m lead_radar.cli --top 10 --dry-run   # preview
+python -m lead_radar.cli --top 10             # create the issues
+```
+
+On Kubernetes, the keys come from the `smb-deal-bot-secrets` Secret (created from `.env`, see the main README).
+
 ## Coming next
 
-- Draft a first email per top lead with the Claude API.
-- Create a Linear issue for each top-10 lead.
-- Save leads and scores in the shared Postgres database.
+- Save leads, scores and drafts in the shared Postgres database.
