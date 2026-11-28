@@ -128,7 +128,8 @@ class LinearClient:
 
 def push_leads(leads: list[dict], drafts: dict[str, str] | None = None, client: LinearClient | None = None,
                team_key: str | None = None, dry_run: bool = False) -> list[Result]:
-    """Create one Linear issue per lead. `drafts` maps company name to an email body."""
+    """Create one Linear issue per lead. `drafts` maps the issue title (one contact at one company)
+    to an email body; a company name also works, for older callers."""
     drafts = drafts or {}
     client = client or LinearClient()
     if dry_run or not client.api_key:
@@ -143,7 +144,8 @@ def push_leads(leads: list[dict], drafts: dict[str, str] | None = None, client: 
             results.append(Result(title, "exists", existing["identifier"], existing["url"]))
             continue
         issue = client.create_issue(
-            team_id, title, issue_description(lead, drafts.get(lead["company"])), issue_priority(int(lead["score"]))
+            team_id, title, issue_description(lead, drafts.get(title, drafts.get(lead["company"]))),
+            issue_priority(int(lead["score"])),
         )
         results.append(Result(title, "created", issue["identifier"], issue["url"]))
     return results

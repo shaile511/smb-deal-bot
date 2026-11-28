@@ -18,8 +18,8 @@ from dotenv import find_dotenv, load_dotenv
 
 from lead_radar.drafts import draft_email
 from lead_radar.generate import generate_leads
-from lead_radar.linear import LinearError, push_leads
-from lead_radar.scoring import rank_leads
+from lead_radar.linear import LinearError, issue_title, push_leads
+from lead_radar.scoring import REQUIRED_COLUMNS, check_leads, rank_leads
 
 # Read API keys from the nearest .env (repo root), on any OS. Real env vars win.
 load_dotenv(find_dotenv(usecwd=True))
@@ -35,12 +35,20 @@ if not (has_claude and has_linear):
     st.info(f"Demo mode for {' and '.join(missing)}: no API key set, so drafts use a template "
             f"and Linear runs as a dry run.")
 
-uploaded = st.sidebar.file_uploader("Upload a lead CSV", type="csv")
+uploaded = st.sidebar.file_uploader("Upload a lead CSV", type="csv",
+                                    help="Columns: " + ", ".join(REQUIRED_COLUMNS) + " (contact_email optional).")
 seed = st.sidebar.number_input("Or generate fake leads (seed)", value=42, step=1)
 top_n = st.sidebar.slider("Show top", 5, 50, 10)
 
 if uploaded is not None:
     leads = pd.read_csv(uploaded, dtype={"contract_end": str})
+    problems = check_leads(leads)
+    if problems:
+        st.error("This CSV can't be scored yet:\n\n" + "\n".join(f"- {p}" for p in problems[:10])
+                 + (f"\n- ...and {len(problems) - 10} more" if len(problems) > 10 else ""))
+        st.stop()
+    if "contact_email" not in leads.columns:
+        leads["contact_email"] = ""
 else:
     leads = generate_leads(200, int(seed))
 
@@ -58,19 +66,21 @@ st.dataframe(
 drafts: dict[str, str] = st.session_state.setdefault("drafts", {})
 
 st.subheader("Why each lead scored the way it did")
-for _, row in top.iterrows():
+for i, row in top.iterrows():
     lead = row.to_dict()
+    # Keyed by contact and company (and row), since two leads can share a company name.
+    title = issue_title(lead)
     with st.expander(f"{row['score']}  ·  {row['company']}  ·  {row['contact_name']}"):
         for reason in row["reasons"]:
             st.write(reason)
-        if st.button("Draft first email", key=f"draft-{row['company']}"):
+        if st.button("Draft first email", key=f"draft-{i}-{title}"):
             with st.spinner("Drafting..."):
                 d = draft_email(lead)
-            drafts[row["company"]] = f"Subject: {d.subject}\n\n{d.body}"
-        if row["company"] in drafts:
-            drafts[row["company"]] = st.text_area(
-                "Edit before sending (nothing is sent from here)", drafts[row["company"]],
-                height=220, key=f"text-{row['company']}",
+            drafts[title] = f"Subject: {d.subject}\n\n{d.body}"
+        if title in drafts:
+            drafts[title] = st.text_area(
+                "Edit before sending (nothing is sent from here)", drafts[title],
+                height=220, key=f"text-{i}-{title}",
             )
 
 st.sidebar.divider()

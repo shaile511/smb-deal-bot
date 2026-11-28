@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 import pandas as pd
@@ -15,8 +16,8 @@ from dotenv import find_dotenv, load_dotenv
 
 from .drafts import draft_email
 from .generate import generate_leads
-from .linear import LinearError, push_leads
-from .scoring import rank_leads
+from .linear import LinearError, issue_title, push_leads
+from .scoring import check_leads, rank_leads
 
 
 def main() -> None:
@@ -31,14 +32,27 @@ def main() -> None:
     parser.add_argument("--no-drafts", action="store_true", help="skip email drafts")
     args = parser.parse_args()
 
-    leads = pd.read_csv(args.csv, dtype={"contract_end": str}) if args.csv else generate_leads(200, args.seed)
+    if args.csv:
+        leads = pd.read_csv(args.csv, dtype={"contract_end": str})
+        problems = check_leads(leads)
+        if problems:
+            sys.exit("[csv error]\n" + "\n".join(problems))
+        if "contact_email" not in leads.columns:
+            leads["contact_email"] = ""
+    else:
+        leads = generate_leads(200, args.seed)
     top = rank_leads(leads).head(args.top).to_dict(orient="records")
 
+    # Drafts only go somewhere when issues are really created, so a dry run skips them
+    # instead of paying for a Claude call per lead.
+    pushing = not args.dry_run and bool(os.environ.get("LINEAR_API_KEY"))
     drafts = {}
-    if not args.no_drafts:
+    if not args.no_drafts and not pushing:
+        print("[note] Dry run: skipping email drafts, so no Claude credits are spent.")
+    elif not args.no_drafts:
         for lead in top:
             draft = draft_email(lead)
-            drafts[lead["company"]] = f"Subject: {draft.subject}\n\n{draft.body}"
+            drafts[issue_title(lead)] = f"Subject: {draft.subject}\n\n{draft.body}"
             print(f"[draft:{draft.source}] {lead['company']}")
 
     try:
