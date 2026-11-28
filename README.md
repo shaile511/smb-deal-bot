@@ -5,6 +5,7 @@ Three small services, all on made-up data, run together on Kubernetes from one H
 
 **[Project site](https://shaile511.github.io/smb-deal-bot/)** · **[Try the Lead Radar demo](https://smb-deal-bot-3apc4tq4ht4vadxa98meca.streamlit.app/)** (demo mode: sample emails, Linear preview only).
 **[Try the Quote Desk demo](https://smb-deal-bot-pb9vfrp4g6dybpmerysglx.streamlit.app/)** (demo mode: simple notes parser, follow-ups stay in the app).
+**[Try the Account Watch demo](https://smb-deal-bot-89794sqkc7zjl774i4b9mk.streamlit.app/)** (demo mode: reminders stay in the app, digest shown on screen).
 
 > All companies, people, prices and products in this repo are fictional. The demo provider is "Northwind Connect", a made-up telecom and IT services company.
 
@@ -14,7 +15,7 @@ Three small services, all on made-up data, run together on Kubernetes from one H
 | --- | --- | --- | --- |
 | [Lead Radar](services/lead-radar/) | Prospecting | Scores a territory list on fit and contract timing, explains each score, drafts a first email | Working: scoring, email drafts, Linear issues |
 | [Quote Desk](services/quote-desk/) ([demo](https://smb-deal-bot-pb9vfrp4g6dybpmerysglx.streamlit.app/)) | Quoting, follow-up | Turns call notes into a priced PDF quote, then runs follow-ups that stop when the client replies | Working: quotes, PDF, Linear follow-ups, CronJob |
-| [Account Watch](services/account-watch/) | Onboarding, renewal | Tracks onboarding steps, scores account health with reasons, raises renewals in Linear at 90 days and escalates them at 60 and 30, posts a weekly Slack digest | Working: checklists, health, Linear renewals, daily and weekly CronJobs |
+| [Account Watch](services/account-watch/) ([demo](https://smb-deal-bot-89794sqkc7zjl774i4b9mk.streamlit.app/)) | Onboarding, renewal | Tracks onboarding steps, scores account health with reasons, raises renewals in Linear at 90 days and escalates them at 60 and 30, posts a weekly Slack digest | Working: checklists, health, Linear renewals, daily and weekly CronJobs |
 
 Each service also creates work in Linear through its API (top leads, follow-up tasks, overdue onboarding and renewal issues). See [docs/linear.md](docs/linear.md).
 
