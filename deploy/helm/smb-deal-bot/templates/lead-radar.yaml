@@ -38,8 +38,17 @@ spec:
                   name: {{ .Values.existingSecret }}
                   key: LINEAR_API_KEY
                   optional: true
+            # The chart value wins when set; otherwise LINEAR_TEAM_KEY from the Secret (.env). Blank means first team.
             - name: LINEAR_TEAM_KEY
+{{- if .Values.leadRadar.linearTeamKey }}
               value: {{ .Values.leadRadar.linearTeamKey | quote }}
+{{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: LINEAR_TEAM_KEY
+                  optional: true
+{{- end }}
           readinessProbe:
             httpGet:
               path: /_stcore/health

@@ -1,4 +1,4 @@
-# Name of the Secret holding POSTGRES_PASSWORD, ANTHROPIC_API_KEY, LINEAR_API_KEY, SLACK_WEBHOOK_URL.
+# Name of the Secret holding POSTGRES_PASSWORD, ANTHROPIC_API_KEY, LINEAR_API_KEY and, optionally, LINEAR_TEAM_KEY.
 # Create it from .env (see README) so no key ever lives in this file.
 existingSecret: smb-deal-bot-secrets
 
@@ -19,7 +19,8 @@ postgres:
 leadRadar:
   enabled: false
   replicas: 1
-  # Linear team key or name for new issues; empty means the workspace's first team.
+  # Linear team key or name for new issues. Empty: use LINEAR_TEAM_KEY from the Secret, and if
+  # that is blank too, the workspace's first team.
   linearTeamKey: ""
   image:
     # Built locally and loaded into kind (see services/lead-radar/README.md).
@@ -36,6 +37,7 @@ leadRadar:
 quoteDesk:
   enabled: false
   replicas: 1
+  # Same rule as leadRadar.linearTeamKey.
   linearTeamKey: ""
   # When the follow-up CronJob runs, in UTC. 13:00 UTC is 8 AM Eastern (9 AM in summer).
   followupSchedule: "0 13 * * *"
