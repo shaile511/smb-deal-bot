@@ -1,5 +1,7 @@
 # Account Watch (onboarding and renewal)
 
+**[Live demo](https://smb-deal-bot-89794sqkc7zjl774i4b9mk.streamlit.app/)** (demo mode: reminders stay in the app instead of Linear, the weekly digest is shown on screen instead of posted to Slack)
+
 **Problem:** after the deal closes, nobody checks that the install, number porting and training happened, and renewals get noticed too late, when the client is already talking to someone else.
 
 **What it does:**
@@ -95,7 +97,7 @@ Delete a finished job with `kubectl -n smb-deal-bot delete job daily-now` before
 
 ### Public demo link (Streamlit Community Cloud)
 
-Same as the other two: create a third app from this repo with main file `services/account-watch/streamlit_app.py`, Python 3.12, and **no** secrets.
+The [live demo](https://smb-deal-bot-89794sqkc7zjl774i4b9mk.streamlit.app/) is a Streamlit Community Cloud app from this repo with main file `services/account-watch/streamlit_app.py`, Python 3.12, and **no** secrets.
 
 ## Turn on Linear and Slack
 
