@@ -11,7 +11,7 @@ Order of rules, so a reviewer can follow the maths:
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
 from . import price_book as pb
 
@@ -180,12 +180,14 @@ def build_quote(needs: Needs, extra_discount: Decimal | float | str = 0) -> Quot
                 f"the {pb.MARGIN_FLOOR:.0%} floor."
             )
         if applied > 0:
-            amount = money(running * applied)
+            # Round the rep discount down to the cent: rounding it up could tip the margin a
+            # fraction of a cent under the floor.
+            amount = (running * applied).quantize(CENT, rounding=ROUND_DOWN)
             adjustments.append(Adjustment(f"Rep discount, {applied:.1%}", -amount))
             running -= amount
 
     monthly = money(running)
-    if monthly > 0 and (monthly - cost) / monthly < pb.MARGIN_FLOOR:
+    if applied == 0 and monthly > 0 and (monthly - cost) / monthly < pb.MARGIN_FLOOR:
         warnings.append(f"Margin is below the {pb.MARGIN_FLOOR:.0%} floor even before any rep discount.")
 
     locs = max(1, int(needs.locations)) if needs.internet_speed else 0

@@ -8,7 +8,7 @@ Everything in this repo is invented. No exceptions.
 - The price book uses made-up products and round prices. It is not based on any real provider's pricing.
 - No real employer names, logos, prices, product codes, internal tools, email templates or customer details, even paraphrased.
 
-The generator script arrives with Lead Radar.
+The generator is [`services/lead-radar/lead_radar/generate.py`](../services/lead-radar/lead_radar/generate.py).
 
 ## How realistic is it?
 

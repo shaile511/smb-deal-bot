@@ -1,7 +1,7 @@
 # smb-deal-bot
 
 Automation for the stages of a small-business (SMB) sales deal: prospecting, quoting, follow-up, onboarding and renewal.
-Three small services share one fake dataset and run together on Kubernetes. Work is planned and tracked in Linear.
+Three small services, all on made-up data, run together on Kubernetes from one Helm chart. Two are built; Account Watch is next. Work is planned and tracked in Linear.
 
 **[Project site](https://shaile511.github.io/smb-deal-bot/)** · **[Try the Lead Radar demo](https://smb-deal-bot-3apc4tq4ht4vadxa98meca.streamlit.app/)** (demo mode: sample emails, Linear preview only).
 **[Try the Quote Desk demo](https://smb-deal-bot-pb9vfrp4g6dybpmerysglx.streamlit.app/)** (demo mode: simple notes parser, follow-ups stay in the app).
@@ -20,25 +20,28 @@ Each service also creates work in Linear through its API (top leads, follow-up t
 
 ## Architecture
 
+What runs today. Items in brackets are planned, not built yet.
+
 ```
-                 +-------------------- Kubernetes namespace: smb-deal-bot --------------------+
-                 |                                                                            |
-  browser ---> Ingress ---> lead-radar    (Deployment + Service)                              |
-                 |      \-> quote-desk    (Deployment + Service, follow-up CronJob)           |
-                 |      \-> account-watch (Deployment + Service, daily renewal CronJob)       |
-                 |                  \           |            /                                |
-                 |                   +---- Postgres (StatefulSet) ----+                       |
-                 |                                                                            |
-                 +-------------------------------+--------------------------------------------+
-                                                 |
-                                  Linear API, Claude API, Slack webhook (via Secrets)
+                 +------------------ Kubernetes namespace: smb-deal-bot ------------------+
+                 |                                                                        |
+  browser --(kubectl port-forward)--> lead-radar  (Deployment + Service)                  |
+                 |                    quote-desk  (Deployment + Service) ---+             |
+                 |                    quote-desk-followups (daily CronJob) -+-> Postgres  |
+                 |                    [account-watch, renewal CronJob]          (StatefulSet)
+                 |                                                                        |
+                 +--------------------------------+---------------------------------------+
+                                                  |
+                                 Claude API and Linear API (keys from a Secret)
 ```
+
+Lead Radar generates its own fake leads and keeps nothing in Postgres. Quote Desk stores quotes and follow-ups there, so the app and the CronJob see the same data. There is no Ingress or Slack alert yet.
 
 ## Repo layout
 
 ```
-services/        one folder per service (code arrives in later pull requests)
-data/            fake-data generator and rules
+services/        one folder per service (Lead Radar and Quote Desk built, Account Watch planned)
+data/            fake-data rules and sources (the generator is services/lead-radar/lead_radar/generate.py)
 deploy/helm/     one Helm chart for the whole stack
 deploy/kind/     config for a free local Kubernetes cluster
 docs/            planning notes, Linear setup

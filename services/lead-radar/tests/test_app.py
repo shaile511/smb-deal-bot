@@ -17,3 +17,14 @@ def test_dashboard_renders_in_demo_mode(monkeypatch):
     assert not at.exception
     assert at.title[0].value == "Lead Radar"
     assert len(at.dataframe) == 1
+
+
+def test_two_leads_with_the_same_company_do_not_crash(monkeypatch):
+    """Seed 14 repeats a company name in its top 50, which used to crash on duplicate widget keys."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LINEAR_API_KEY", raising=False)
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    at.sidebar.number_input[0].set_value(14).run()
+    at.sidebar.slider[0].set_value(50).run()
+    assert not at.exception
+    assert len(at.expander) == 50

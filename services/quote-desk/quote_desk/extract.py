@@ -1,12 +1,13 @@
 """Pull structured needs out of a rep's discovery-call notes.
 
-With ANTHROPIC_API_KEY set, Claude reads the notes and fills a fixed schema (via a forced tool
-call, so the output is always the same shape). Without a key, a simple keyword parser does a
+With ANTHROPIC_API_KEY set, Claude reads the notes and fills a fixed schema (via structured
+outputs, so the reply is always JSON of the same shape). Without a key, a simple keyword parser does a
 rougher job, so the demo still runs. The rep always confirms the result before anything is priced.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 
@@ -14,44 +15,41 @@ from .quote import Needs
 
 MODEL = "claude-opus-5-5"
 
-NEEDS_TOOL = {
-    "name": "record_needs",
-    "description": "Record what the small business needs, as stated in the rep's call notes.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "company": {"type": "string", "description": "Business name, empty if not stated"},
-            "contact_name": {"type": "string", "description": "Person the rep spoke to, empty if not stated"},
-            "contact_email": {"type": "string", "description": "Email if stated, else empty"},
-            "staff": {"type": "integer", "description": "Number of staff, 0 if not stated"},
-            "locations": {"type": "integer", "description": "Number of sites, 1 if not stated"},
-            "internet_speed": {
-                "type": ["integer", "null"],
-                "enum": [300, 1000, 3000, None],
-                "description": "Mbps tier: 300, 1000 or 3000. Pick the closest tier if they gave a speed. "
-                               "1000 if they need internet but gave no speed. null if they do not need internet.",
-            },
-            "phone_lines": {"type": "integer", "description": "Desk/office phone lines, 0 if none"},
-            "mobile_lines": {"type": "integer", "description": "Mobile plans, 0 if none"},
-            "mobile_plan": {"type": "string", "enum": ["essential", "unlimited"],
-                            "description": "unlimited only if they ask for unlimited or heavy data, else essential"},
-            "static_ip": {"type": "boolean"},
-            "managed_wifi": {"type": "boolean"},
-            "backup_internet": {"type": "boolean", "description": "Backup or failover internet"},
-            "term_months": {"type": "integer", "enum": [12, 24, 36],
-                            "description": "Contract length they prefer; 36 if not stated"},
-            "notes": {"type": "string",
-                      "description": "One short line on anything that matters but does not fit the fields"},
+NEEDS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "company": {"type": "string", "description": "Business name, empty if not stated"},
+        "contact_name": {"type": "string", "description": "Person the rep spoke to, empty if not stated"},
+        "contact_email": {"type": "string", "description": "Email if stated, else empty"},
+        "staff": {"type": "integer", "description": "Number of staff, 0 if not stated"},
+        "locations": {"type": "integer", "description": "Number of sites, 1 if not stated"},
+        "internet_speed": {
+            "type": ["integer", "null"],
+            "enum": [300, 1000, 3000, None],
+            "description": "Mbps tier: 300, 1000 or 3000. Pick the closest tier if they gave a speed. "
+                           "1000 if they need internet but gave no speed. null if they do not need internet.",
         },
-        "required": ["company", "contact_name", "contact_email", "staff", "locations", "internet_speed",
-                     "phone_lines", "mobile_lines", "mobile_plan", "static_ip", "managed_wifi",
-                     "backup_internet", "term_months", "notes"],
+        "phone_lines": {"type": "integer", "description": "Desk/office phone lines, 0 if none"},
+        "mobile_lines": {"type": "integer", "description": "Mobile plans, 0 if none"},
+        "mobile_plan": {"type": "string", "enum": ["essential", "unlimited"],
+                        "description": "unlimited only if they ask for unlimited or heavy data, else essential"},
+        "static_ip": {"type": "boolean"},
+        "managed_wifi": {"type": "boolean"},
+        "backup_internet": {"type": "boolean", "description": "Backup or failover internet"},
+        "term_months": {"type": "integer", "enum": [12, 24, 36],
+                        "description": "Contract length they prefer; 36 if not stated"},
+        "notes": {"type": "string",
+                  "description": "One short line on anything that matters but does not fit the fields"},
     },
+    "required": ["company", "contact_name", "contact_email", "staff", "locations", "internet_speed",
+                 "phone_lines", "mobile_lines", "mobile_plan", "static_ip", "managed_wifi",
+                 "backup_internet", "term_months", "notes"],
+    "additionalProperties": False,
 }
 
 SYSTEM_PROMPT = """You turn a sales rep's rough discovery-call notes into structured needs for a quote.
 Only record what the notes say or clearly imply. Do not invent numbers: use the defaults given in the
-schema when something is missing. Call the record_needs tool exactly once."""
+schema when something is missing."""
 
 
 def _num(pattern: str, text: str, default: int = 0) -> int:
@@ -93,33 +91,37 @@ def parse_notes_simple(notes: str) -> Needs:
     return needs
 
 
+def claude_request(notes: str) -> dict:
+    """The Messages API request. Claude Opus 5.5 rejects a forced tool_choice with a 400, so the
+    schema goes in structured outputs (output_config.format) instead of a forced tool call."""
+    return dict(
+        model=MODEL,
+        max_tokens=2000,
+        output_config={"effort": "low", "format": {"type": "json_schema", "schema": NEEDS_SCHEMA}},
+        betas=["server-side-fallback-2026-07-01"],
+        fallbacks="default",
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": f"Call notes:\n\n{notes}"}],
+    )
+
+
 def claude_parse(notes: str, client=None) -> Needs:
     import anthropic
 
     client = client or anthropic.Anthropic()
-    response = client.beta.messages.create(
-        model=MODEL,
-        max_tokens=2000,
-        output_config={"effort": "low"},
-        betas=["server-side-fallback-2026-07-01"],
-        fallbacks="default",
-        system=SYSTEM_PROMPT,
-        tools=[NEEDS_TOOL],
-        tool_choice={"type": "tool", "name": "record_needs"},
-        messages=[{"role": "user", "content": f"Call notes:\n\n{notes}"}],
-    )
-    for block in response.content:
-        if block.type == "tool_use" and block.name == "record_needs":
-            needs = Needs.from_dict(block.input)
-            if needs.internet_speed not in (300, 1000, 3000, None):
-                needs.internet_speed = 1000
-            if needs.term_months not in (12, 24, 36):
-                needs.term_months = 36
-            if needs.mobile_plan not in ("essential", "unlimited"):
-                needs.mobile_plan = "essential"
-            needs.locations = max(1, int(needs.locations or 1))
-            return needs
-    raise ValueError(f"Claude did not return the needs (stop reason: {response.stop_reason})")
+    response = client.beta.messages.create(**claude_request(notes))
+    if response.stop_reason != "end_turn":
+        raise ValueError(f"Claude did not return the needs (stop reason: {response.stop_reason})")
+    text = next((b.text for b in response.content if b.type == "text"), "")
+    needs = Needs.from_dict(json.loads(text))
+    if needs.internet_speed not in (300, 1000, 3000, None):
+        needs.internet_speed = 1000
+    if needs.term_months not in (12, 24, 36):
+        needs.term_months = 36
+    if needs.mobile_plan not in ("essential", "unlimited"):
+        needs.mobile_plan = "essential"
+    needs.locations = max(1, int(needs.locations or 1))
+    return needs
 
 
 def extract_needs(notes: str, client=None) -> tuple[Needs, str]:

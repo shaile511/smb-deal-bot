@@ -5,7 +5,7 @@
 **Problem:** reps waste hours deciding which small businesses in a territory to call first, then write the same cold email over and over.
 
 **What it does now:**
-1. Generates 200 fictional small businesses (or takes your own CSV).
+1. Generates 200 fictional small businesses (or takes your own CSV, see below).
 2. Scores each one out of 100 on **fit** (staff size, number of locations, industry) and **timing** (when their current contract ends).
 3. Shows every score's reasons, so a rep can trust or challenge the ranking.
 4. Leaves out businesses that are already customers.
@@ -25,7 +25,13 @@ Without API keys it runs in **demo mode**: template drafts, and Linear as a dry 
 | Industry | 20 | Dental clinics, law offices, real estate |
 | Timing | 40 | Contract ends in 2 to 4 months |
 
+A blank contract end scores 30 for timing on a consumer plan (they can switch any time) and 15 on a business provider, where it usually just means nobody knows the date yet.
+
 The weights are a starting point from sales experience, not a trained model. They live in [`lead_radar/scoring.py`](lead_radar/scoring.py).
+
+## Your own CSV
+
+One row per business, with these columns: `company`, `contact_name`, `city`, `industry`, `employees`, `locations`, `current_provider`, `contract_end` (`contact_email` is optional). `contract_end` can be `2027-02`, `2027-02-15`, `2027/02` or `02/2027`, or blank if unknown. A file with a missing column, a non-number or an unreadable date is rejected with the line numbers to fix.
 
 ## Run it
 

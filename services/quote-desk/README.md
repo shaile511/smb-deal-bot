@@ -43,7 +43,9 @@ python -m pytest -q tests
 streamlit run quote_desk/app.py
 ```
 
-Locally it saves quotes in a SQLite file. In the cluster it uses the chart's Postgres, so the app and the CronJob share the same data.
+Where quotes are saved: in the cluster, the chart's Postgres, so the app and the CronJob share the same data. With `DATABASE_URL` or `QUOTE_DESK_DATA` set, that database (or a SQLite file in that folder). With none of these, as on the public demo, each browser tab gets its own private in-memory database, so no visitor sees another's quotes. Set `QUOTE_DESK_DATA=.` on a laptop if you want the app and `quote_desk.cli` to share a file.
+
+Each quote gets its number (Q-0001, Q-0002, ...) from the database when it is marked as sent; the PDF is offered after that, with the same number.
 
 On the local Kubernetes cluster:
 
@@ -51,7 +53,7 @@ On the local Kubernetes cluster:
 docker build -t smb-deal-bot/quote-desk:dev services/quote-desk
 kind load docker-image smb-deal-bot/quote-desk:dev --name <your-cluster>
 helm upgrade --install smb-deal-bot deploy/helm/smb-deal-bot -n smb-deal-bot \
-  --set leadRadar.enabled=true --set quoteDesk.enabled=true --set quoteDesk.linearTeamKey=<TEAM>
+  --set leadRadar.enabled=true --set quoteDesk.enabled=true
 kubectl -n smb-deal-bot port-forward svc/quote-desk 8502:80
 ```
 
@@ -68,7 +70,7 @@ Same as Lead Radar: create a second app from this repo with main file `services/
 
 ## Turn on Claude and Linear
 
-Uses the same `.env` keys as Lead Radar (`ANTHROPIC_API_KEY`, `LINEAR_API_KEY`, `LINEAR_TEAM_KEY`). From the command line:
+Uses the same `.env` keys as Lead Radar (`ANTHROPIC_API_KEY`, `LINEAR_API_KEY`, `LINEAR_TEAM_KEY`), with the same team rule: blank means the first team, and a team key or name matches in any case. In the cluster, `LINEAR_TEAM_KEY` comes from the Secret unless you set `quoteDesk.linearTeamKey`. From the command line:
 
 ```bash
 python -m quote_desk.cli run-followups                    # what the CronJob runs
