@@ -17,8 +17,7 @@ class LinearError(RuntimeError):
     pass
 
 
-TEAM_QUERY = """query($key: String!) { teams(filter: { key: { eq: $key } }) { nodes { id key
-  states { nodes { id name type } } } } }"""
+TEAMS_QUERY = """query { teams { nodes { id key name states { nodes { id name type } } } } }"""
 CREATE_MUTATION = """mutation($input: IssueCreateInput!) { issueCreate(input: $input) { success
   issue { id identifier url } } }"""
 UPDATE_MUTATION = """mutation($id: String!, $input: IssueUpdateInput!) { issueUpdate(id: $id, input: $input)
@@ -53,23 +52,36 @@ class LinearClient:
         self._team = None
 
     def _gql(self, query: str, variables: dict) -> dict:
-        resp = self.session.post(API_URL, json={"query": query, "variables": variables},
-                                 headers={"Authorization": self.api_key, "Content-Type": "application/json"},
-                                 timeout=TIMEOUT)
-        if resp.status_code == 401 or resp.status_code == 400 and "authentication" in resp.text.lower():
-            raise LinearError("Linear rejected the API key. Check LINEAR_API_KEY in your .env.")
-        resp.raise_for_status()
-        body = resp.json()
+        try:
+            resp = self.session.post(API_URL, json={"query": query, "variables": variables},
+                                     headers={"Authorization": self.api_key, "Content-Type": "application/json"},
+                                     timeout=TIMEOUT)
+            if resp.status_code == 401 or resp.status_code == 400 and "authentication" in resp.text.lower():
+                raise LinearError("Linear rejected the API key. Check LINEAR_API_KEY in your .env.")
+            resp.raise_for_status()
+            body = resp.json()
+        except requests.RequestException as exc:  # network errors and HTTP errors alike
+            raise LinearError(f"Could not reach Linear ({type(exc).__name__}). Try again.") from exc
         if body.get("errors"):
             raise LinearError(f"Linear error: {body['errors'][0].get('message')}")
         return body["data"]
 
     def team(self) -> dict:
+        """Same rule as Lead Radar: blank means the first team; a key or a name matches in any case."""
         if self._team is None:
-            nodes = self._gql(TEAM_QUERY, {"key": self.team_key})["teams"]["nodes"]
-            if not nodes:
-                raise LinearError(f"Linear team '{self.team_key}' not found. Set LINEAR_TEAM_KEY in your .env.")
-            self._team = nodes[0]
+            teams = self._gql(TEAMS_QUERY, {})["teams"]["nodes"]
+            if not teams:
+                raise LinearError("No teams found in this Linear workspace.")
+            wanted = (self.team_key or "").strip().lower()
+            if not wanted:
+                self._team = teams[0]
+            else:
+                match = [t for t in teams if wanted in (t["key"].lower(), t["name"].lower())]
+                if not match:
+                    keys = ", ".join(t["key"] for t in teams)
+                    raise LinearError(f"Linear team {self.team_key!r} not found. Your teams: {keys}. Set "
+                                      "LINEAR_TEAM_KEY in your .env to one of those, or leave it blank for the first team.")
+                self._team = match[0]
         return self._team
 
     def create_issue(self, title: str, description: str, due: date) -> dict:
@@ -93,7 +105,7 @@ def client_from_env() -> LinearClient | None:
     key = os.environ.get("LINEAR_API_KEY")
     if not key:
         return None
-    return LinearClient(key, os.environ.get("LINEAR_TEAM_KEY", "THE"))
+    return LinearClient(key, os.environ.get("LINEAR_TEAM_KEY", ""))
 
 
 def run_due(engine, today: date | None = None, linear: LinearClient | None = None) -> list[dict]:
@@ -115,11 +127,17 @@ def run_due(engine, today: date | None = None, linear: LinearClient | None = Non
 
 def client_replied(engine, quote_id: int, linear: LinearClient | None = None,
                    today: date | None = None) -> int:
-    """Stop the quote's follow-ups and close their Linear issues. Returns how many issues were closed."""
-    with_issues = store.mark_replied(engine, quote_id, today)
+    """Close the quote's Linear issues, then stop its follow-ups. Returns how many issues were closed.
+
+    Each issue is closed before its follow-up is marked stopped, so if Linear fails part way the
+    rest stay open in the app and a retry picks them up.
+    """
     closed = 0
     if linear:
-        for f in with_issues:
-            linear.close_issue(f["linear_id"], "Client replied, so this follow-up is no longer needed.")
-            closed += 1
+        for f in store.open_followups(engine, quote_id):
+            if f["linear_id"]:
+                linear.close_issue(f["linear_id"], "Client replied, so this follow-up is no longer needed.")
+                store.stop_followup(engine, f["id"])
+                closed += 1
+    store.mark_replied(engine, quote_id, today)
     return closed

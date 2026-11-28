@@ -1,15 +1,21 @@
-"""Quotes and their follow-ups, stored in SQLite locally or Postgres in the cluster (DATABASE_URL)."""
+"""Quotes and their follow-ups.
+
+Where they live: DATABASE_URL if set; otherwise the chart's Postgres when POSTGRES_HOST is set
+(the cluster); otherwise a SQLite file next to the code, or in QUOTE_DESK_DATA.
+"""
 
 from __future__ import annotations
 
 import json
 import os
+import uuid
 from datetime import date, timedelta
 from pathlib import Path
 
 from sqlalchemy import (Column, Date, Float, ForeignKey, Integer, MetaData, String, Table, Text,
-                        create_engine, func, insert, select, update)
+                        create_engine, insert, select, update)
 from sqlalchemy.engine import URL, Engine
+from sqlalchemy.pool import StaticPool
 
 FOLLOWUP_DAYS = (2, 5, 10)
 
@@ -28,6 +34,7 @@ quotes = Table(
     Column("status", String(20), nullable=False, default="sent"),  # sent | replied
     Column("sent_on", Date, nullable=False),
     Column("replied_on", Date, nullable=True),
+    sqlite_autoincrement=True,  # never reuse an id, so never reuse a quote number
 )
 
 followups = Table(
@@ -58,6 +65,19 @@ def default_url() -> str | URL:
     return f"sqlite:///{path}"
 
 
+def has_configured_db() -> bool:
+    """True when a database was chosen on purpose, rather than the default local file."""
+    return any(os.environ.get(k) for k in ("DATABASE_URL", "POSTGRES_HOST", "QUOTE_DESK_DATA"))
+
+
+def memory_engine() -> Engine:
+    """A private in-memory database, one per visitor of the public demo."""
+    engine = create_engine("sqlite://", future=True, poolclass=StaticPool,
+                           connect_args={"check_same_thread": False})
+    metadata.create_all(engine)
+    return engine
+
+
 def get_engine(url: str | URL | None = None) -> Engine:
     engine = create_engine(url or default_url(), future=True, pool_pre_ping=True)
     metadata.create_all(engine)
@@ -69,18 +89,23 @@ def save_quote(engine: Engine, needs: dict, quote: dict, monthly_total: float,
     """Record a sent quote and schedule its follow-ups. Returns the stored quote row."""
     sent_on = sent_on or date.today()
     with engine.begin() as conn:
-        count = conn.execute(select(func.count()).select_from(quotes)).scalar_one()
-        number = f"Q-{count + 1:04d}"
+        # The number comes from the row id, assigned once by the database, so two saves can never
+        # share a number. A unique placeholder holds the column until the id is known.
         quote_id = conn.execute(insert(quotes).values(
-            number=number, company=needs.get("company") or "Customer",
+            number=f"pending-{uuid.uuid4().hex[:12]}", company=needs.get("company") or "Customer",
             contact_name=needs.get("contact_name") or "", contact_email=needs.get("contact_email") or "",
             needs_json=json.dumps(needs), quote_json=json.dumps(quote), monthly_total=monthly_total,
             status="sent", sent_on=sent_on,
         )).inserted_primary_key[0]
+        conn.execute(update(quotes).where(quotes.c.id == quote_id).values(number=quote_number(quote_id)))
         for step, days in enumerate(FOLLOWUP_DAYS, start=1):
             conn.execute(insert(followups).values(quote_id=quote_id, step=step,
                                                   due_on=sent_on + timedelta(days=days), status="scheduled"))
     return get_quote(engine, quote_id)
+
+
+def quote_number(quote_id: int) -> str:
+    return f"Q-{quote_id:04d}"
 
 
 def get_quote(engine: Engine, quote_id: int) -> dict:
@@ -116,10 +141,19 @@ def mark_due(engine: Engine, followup_id: int, linear_id: str | None, identifier
             status="due", linear_id=linear_id, linear_identifier=identifier, linear_url=url))
 
 
+def open_followups(engine: Engine, quote_id: int) -> list[dict]:
+    return [f for f in list_followups(engine, quote_id) if f["status"] in ("scheduled", "due")]
+
+
+def stop_followup(engine: Engine, followup_id: int) -> None:
+    with engine.begin() as conn:
+        conn.execute(update(followups).where(followups.c.id == followup_id).values(status="stopped"))
+
+
 def mark_replied(engine: Engine, quote_id: int, replied_on: date | None = None) -> list[dict]:
-    """Stop the quote's open follow-ups. Returns the ones that had Linear issues to close."""
+    """Mark the quote replied and stop its open follow-ups. Returns the stopped ones that had Linear issues."""
     replied_on = replied_on or date.today()
-    open_ones = [f for f in list_followups(engine, quote_id) if f["status"] in ("scheduled", "due")]
+    open_ones = open_followups(engine, quote_id)
     with engine.begin() as conn:
         conn.execute(update(quotes).where(quotes.c.id == quote_id).values(status="replied", replied_on=replied_on))
         conn.execute(update(followups).where(followups.c.quote_id == quote_id,

@@ -34,7 +34,7 @@ def test_install_waived_on_36_months_only():
 def test_extra_discount_is_capped_at_margin_floor():
     q = build_quote(dental(), Decimal("0.60"))
     assert q.extra_discount_applied < Decimal("0.60")
-    assert q.margin >= pb.MARGIN_FLOOR - Decimal("0.001")
+    assert q.margin >= pb.MARGIN_FLOOR
     assert any("cap" in w.lower() for w in q.warnings)
 
 

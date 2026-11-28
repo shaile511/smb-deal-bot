@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from datetime import date, timedelta
@@ -30,8 +31,30 @@ st.set_page_config(page_title="Quote Desk", page_icon="🧾", layout="wide")
 
 
 @st.cache_resource
-def engine():
+def shared_engine():
     return store.get_engine()
+
+
+SHARED_DB = store.has_configured_db()
+
+
+def engine():
+    """The cluster (or a laptop with a database set) shares one database. The public demo has none,
+    so each visitor gets a private in-memory one and never sees what someone else typed."""
+    if SHARED_DB:
+        return shared_engine()
+    if "engine" not in st.session_state:
+        st.session_state.engine = store.memory_engine()
+    return st.session_state.engine
+
+
+def bounded(label: str, low: int, high: int, value) -> int:
+    """A number box that never crashes on a value outside its limits (e.g. notes saying "120 stores")."""
+    value = int(value or 0)
+    if not low <= value <= high:
+        st.warning(f"{label}: the notes say {value}, which is outside {low} to {high}. Set to {min(max(value, low), high)}; check it.")
+        value = min(max(value, low), high)
+    return st.number_input(label, low, high, value)
 
 
 def md(text: str) -> str:
@@ -60,6 +83,8 @@ if not has_claude or linear is None:
     st.info(f"Demo mode: no {' or '.join(missing)} key, so "
             + ("notes are read by a simple keyword parser" if not has_claude else "Claude reads the notes")
             + (" and follow-ups stay in this app instead of Linear." if linear is None else "."))
+if not SHARED_DB:
+    st.caption("Quotes you save here are private to this browser tab and disappear when you close it.")
 
 # 1. Call notes
 st.header("1. Call notes")
@@ -83,14 +108,14 @@ with c1:
     n.company = st.text_input("Company", n.company)
     n.contact_name = st.text_input("Contact", n.contact_name)
     n.contact_email = st.text_input("Email", n.contact_email)
-    n.staff = st.number_input("Staff", 0, 10000, int(n.staff))
-    n.locations = st.number_input("Locations", 1, 100, int(n.locations))
+    n.staff = bounded("Staff", 0, 10000, n.staff)
+    n.locations = bounded("Locations", 1, 100, n.locations)
 with c2:
     speeds = [None, 300, 1000, 3000]
     n.internet_speed = st.selectbox("Internet", speeds, index=speeds.index(n.internet_speed),
                                     format_func=lambda s: "None" if s is None else pb.INTERNET[s].name)
-    n.phone_lines = st.number_input("Desk phone lines", 0, 1000, int(n.phone_lines))
-    n.mobile_lines = st.number_input("Mobile lines", 0, 1000, int(n.mobile_lines))
+    n.phone_lines = bounded("Desk phone lines", 0, 1000, n.phone_lines)
+    n.mobile_lines = bounded("Mobile lines", 0, 1000, n.mobile_lines)
     n.mobile_plan = st.radio("Mobile plan", ["essential", "unlimited"],
                              index=["essential", "unlimited"].index(n.mobile_plan), horizontal=True)
 with c3:
@@ -125,14 +150,22 @@ with right:
 for w in q.warnings:
     st.warning(md(w))
 
-existing = len(store.list_quotes(engine()))
-preview_number = f"Q-{existing + 1:04d}"
-st.download_button("Download quote PDF", render_pdf(n, q, preview_number), file_name=f"{preview_number}.pdf",
-                   mime="application/pdf", disabled=not q.lines)
-if st.button("Mark as sent and schedule follow-ups", disabled=not q.lines):
-    saved = store.save_quote(engine(), n.to_dict(), quote_dict(q), float(q.monthly))
+# The quote number is given once, by the database, when the quote is saved. The PDF carries that
+# number, and the same quote cannot be saved twice (change anything above to make a new quote).
+this_quote = json.dumps([n.to_dict(), str(extra)], sort_keys=True)
+saved = st.session_state.get("saved")
+already_saved = saved is not None and saved["key"] == this_quote
+if st.button("Mark as sent and schedule follow-ups", disabled=not q.lines or already_saved):
+    row = store.save_quote(engine(), n.to_dict(), quote_dict(q), float(q.monthly))
+    st.session_state.saved = {"key": this_quote, "number": row["number"]}
+    st.rerun()
+if already_saved:
     days = ", ".join(str(d) for d in store.FOLLOWUP_DAYS)
     st.success(f"{saved['number']} saved. Follow-ups scheduled for day {days}.")
+    st.download_button(f"Download {saved['number']} as PDF", render_pdf(n, q, saved["number"]),
+                       file_name=f"{saved['number']}.pdf", mime="application/pdf")
+elif q.lines:
+    st.caption("Saving gives the quote its number, then the PDF is ready to download.")
 
 # 4. Follow-ups
 st.header("4. Follow-ups")
