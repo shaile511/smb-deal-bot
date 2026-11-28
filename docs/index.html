@@ -99,7 +99,7 @@ footer p { margin: 0 0 6px; }
   <div class="flow" aria-label="Deal stages">
     <div class="step"><span class="n">Step 1 · Prospect</span><b>Lead Radar</b><span>Rank the territory and explain every score</span></div>
     <div class="step"><span class="n">Step 2 · Quote and follow up</span><b>Quote Desk</b><span>Call notes to priced quote, follow-ups on autopilot</span></div>
-    <div class="step"><span class="n">Step 3 · Onboard and renew</span><b>Account Watch</b><span>Health scores and renewal reminders (next)</span></div>
+    <div class="step"><span class="n">Step 3 · Onboard and renew</span><b>Account Watch</b><span>Onboarding checklists, health scores and renewal reminders</span></div>
   </div>
 
   <h2>The tools</h2>
@@ -142,18 +142,28 @@ footer p { margin: 0 0 6px; }
       </div>
     </article>
 
-    <article class="tool soon">
+    <article class="tool">
+      <div class="shot"><img src="assets/account-watch.webp" alt="Account Watch showing renewals ranked by urgency and health, with Linear priorities, and account health scores with the reasons behind them" loading="lazy" width="1200" height="900"></div>
       <div class="body">
-        <span class="tag next">Coming next</span>
+        <span class="tag">New</span>
         <h3>Account Watch</h3>
-        <p class="problem">Onboarding steps get missed and renewals sneak up. Tracks each new account's onboarding, scores account health with reasons, and raises renewal reminders in Linear at 90, 60 and 30 days.</p>
+        <p class="problem">After the deal closes, onboarding steps get missed and renewals sneak up.</p>
+        <ul>
+          <li>An onboarding checklist for every new account, built from the services it bought</li>
+          <li>A health score from 0 to 100 with the reason for every point lost, plus upsell signals</li>
+          <li>A daily CronJob raises one Linear issue per renewal at 90 days and escalates it at 60 and 30</li>
+          <li>A weekly Slack digest of renewals, at-risk accounts and overdue onboarding</li>
+        </ul>
+        <div class="actions">
+          <a class="btn" href="https://github.com/shaile511/smb-deal-bot/tree/main/services/account-watch">Code</a>
+        </div>
       </div>
     </article>
   </section>
 
   <h2>How it's built</h2>
   <section class="stack">
-    <div class="card"><b>Kubernetes and Helm</b><span>Every tool runs on one cluster from one Helm chart, with Postgres and a daily CronJob for follow-ups.</span></div>
+    <div class="card"><b>Kubernetes and Helm</b><span>Every tool runs on one cluster from one Helm chart, with Postgres and CronJobs for follow-ups, renewals and a weekly digest.</span></div>
     <div class="card"><b>Claude</b><span>Reads call notes and drafts emails. Every tool still works in demo mode without a key.</span></div>
     <div class="card"><b>Linear</b><span>The rep's to-do list inside the apps, and where the build itself is planned and tracked.</span></div>
     <div class="card"><b>Python, Streamlit, GitHub Actions</b><span>Tested on every pull request: unit tests, an app smoke test, chart validation and image builds.</span></div>

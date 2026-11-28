@@ -1,7 +1,7 @@
 # smb-deal-bot
 
 Automation for the stages of a small-business (SMB) sales deal: prospecting, quoting, follow-up, onboarding and renewal.
-Three small services, all on made-up data, run together on Kubernetes from one Helm chart. Two are built; Account Watch is next. Work is planned and tracked in Linear.
+Three small services, all on made-up data, run together on Kubernetes from one Helm chart. Work is planned and tracked in Linear.
 
 **[Project site](https://shaile511.github.io/smb-deal-bot/)** · **[Try the Lead Radar demo](https://smb-deal-bot-3apc4tq4ht4vadxa98meca.streamlit.app/)** (demo mode: sample emails, Linear preview only).
 **[Try the Quote Desk demo](https://smb-deal-bot-pb9vfrp4g6dybpmerysglx.streamlit.app/)** (demo mode: simple notes parser, follow-ups stay in the app).
@@ -14,33 +14,35 @@ Three small services, all on made-up data, run together on Kubernetes from one H
 | --- | --- | --- | --- |
 | [Lead Radar](services/lead-radar/) | Prospecting | Scores a territory list on fit and contract timing, explains each score, drafts a first email | Working: scoring, email drafts, Linear issues |
 | [Quote Desk](services/quote-desk/) ([demo](https://smb-deal-bot-pb9vfrp4g6dybpmerysglx.streamlit.app/)) | Quoting, follow-up | Turns call notes into a priced PDF quote, then runs follow-ups that stop when the client replies | Working: quotes, PDF, Linear follow-ups, CronJob |
-| [Account Watch](services/account-watch/) | Onboarding, renewal | Tracks onboarding steps, scores account health, flags renewals at 90, 60 and 30 days | Planned |
+| [Account Watch](services/account-watch/) | Onboarding, renewal | Tracks onboarding steps, scores account health with reasons, raises renewals in Linear at 90 days and escalates them at 60 and 30, posts a weekly Slack digest | Working: checklists, health, Linear renewals, daily and weekly CronJobs |
 
-Each service also creates work in Linear through its API (top leads, follow-up tasks, onboarding and renewal issues). See [docs/linear.md](docs/linear.md).
+Each service also creates work in Linear through its API (top leads, follow-up tasks, overdue onboarding and renewal issues). See [docs/linear.md](docs/linear.md).
 
 ## Architecture
 
-What runs today. Items in brackets are planned, not built yet.
+What runs in the cluster:
 
 ```
                  +------------------ Kubernetes namespace: smb-deal-bot ------------------+
                  |                                                                        |
-  browser --(kubectl port-forward)--> lead-radar  (Deployment + Service)                  |
-                 |                    quote-desk  (Deployment + Service) ---+             |
-                 |                    quote-desk-followups (daily CronJob) -+-> Postgres  |
-                 |                    [account-watch, renewal CronJob]          (StatefulSet)
+  browser --(kubectl port-forward)--> lead-radar     (Deployment + Service)               |
+                 |                    quote-desk     (Deployment + Service) ---+          |
+                 |                    quote-desk-followups  (daily CronJob) ---+          |
+                 |                    account-watch  (Deployment + Service) ---+-> Postgres
+                 |                    account-watch-daily   (daily CronJob) ---+  (StatefulSet)
+                 |                    account-watch-digest (weekly CronJob) ---+          |
                  |                                                                        |
                  +--------------------------------+---------------------------------------+
                                                   |
-                                 Claude API and Linear API (keys from a Secret)
+                         Claude API, Linear API and a Slack webhook (keys from a Secret)
 ```
 
-Lead Radar generates its own fake leads and keeps nothing in Postgres. Quote Desk stores quotes and follow-ups there, so the app and the CronJob see the same data. There is no Ingress or Slack alert yet.
+Lead Radar generates its own fake leads and keeps nothing in Postgres. Quote Desk and Account Watch store their data there (in separate tables), so each app and its CronJobs see the same data. There is no Ingress.
 
 ## Repo layout
 
 ```
-services/        one folder per service (Lead Radar and Quote Desk built, Account Watch planned)
+services/        one folder per service (Lead Radar, Quote Desk, Account Watch)
 data/            fake-data rules and sources (the generator is services/lead-radar/lead_radar/generate.py)
 deploy/helm/     one Helm chart for the whole stack
 deploy/kind/     config for a free local Kubernetes cluster
@@ -75,7 +77,7 @@ kubectl -n smb-deal-bot port-forward svc/lead-radar 8501:80
 
 Open http://localhost:8501. Stop with Ctrl+C; remove everything with `helm uninstall smb-deal-bot -n smb-deal-bot`.
 
-By default the chart starts Postgres only. Turn a service on with `--set leadRadar.enabled=true`; see each service README for building its image.
+By default the chart starts Postgres only. Turn a service on with `--set leadRadar.enabled=true` (or `quoteDesk`, `accountWatch`); see each service README for building its image.
 
 ## Project tracking
 

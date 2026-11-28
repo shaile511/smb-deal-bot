@@ -1,4 +1,5 @@
-# Name of the Secret holding POSTGRES_PASSWORD, ANTHROPIC_API_KEY, LINEAR_API_KEY and, optionally, LINEAR_TEAM_KEY.
+# Name of the Secret holding POSTGRES_PASSWORD, ANTHROPIC_API_KEY, LINEAR_API_KEY and, optionally,
+# LINEAR_TEAM_KEY and SLACK_WEBHOOK_URL.
 # Create it from .env (see README) so no key ever lives in this file.
 existingSecret: smb-deal-bot-secrets
 
@@ -55,3 +56,21 @@ quoteDesk:
       memory: 512Mi
 accountWatch:
   enabled: false
+  replicas: 1
+  # Same rule as leadRadar.linearTeamKey.
+  linearTeamKey: ""
+  # In UTC. Daily check at 12:00 UTC (7 AM Eastern, 8 AM in summer); digest Mondays at 13:00 UTC.
+  dailySchedule: "0 12 * * *"
+  digestSchedule: "0 13 * * 1"
+  image:
+    # Built locally and loaded into kind (see services/account-watch/README.md).
+    repository: smb-deal-bot/account-watch
+    tag: dev
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
